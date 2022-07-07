@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Text.Json;
 using CsvHelper;
+using Microsoft.Extensions.Configuration;
 using Report.Models;
 using Report.Services.Interfaces;
 
@@ -12,16 +13,26 @@ namespace Report.Services
 {
     public class ClockifyService : IClockifyService
     {
+        private IConfiguration Configuration { get; }
+        public ClockifyService(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public ClockifyService() { }
+
         public void GetReport()
         {
             try
             {
-                string FilePath = "/home/codemancystudio/Desktop/report.csv";
+                var filePath = Configuration.GetSection("FilePath").Value;
 
                 DTO dto = new DTO();
-                Filter filter = new Filter();
-                filter.page = 1;
-                filter.pageSize = 200;
+                Filter filter = new Filter
+                {
+                    page = 1,
+                    pageSize = 200
+                };
 
                 DateTime now = DateTime.Now.AddDays(-1);
 
@@ -34,10 +45,10 @@ namespace Report.Services
 
                 var httpWebRequest =
                     (HttpWebRequest) WebRequest.Create(
-                        "https://reports.api.clockify.me/v1/workspaces/{WORKSPACE ID}/reports/detailed");
+                        $"https://reports.api.clockify.me/v1/workspaces/{Configuration.GetSection("WORKSPACE_ID").Value}/reports/detailed");
                 httpWebRequest.ContentType = "application/json";
                 httpWebRequest.Method = "POST";
-                httpWebRequest.Headers.Add("X-Api-Key", "{API KEY}");
+                httpWebRequest.Headers.Add("X-Api-Key", $"{Configuration.GetSection("API_KEY").Value}");
 
                 ServicePointManager.SecurityProtocol =
                     SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
@@ -63,14 +74,12 @@ namespace Report.Services
                                 .TotalHours);
 
 
-                        if (obj.amount != null && obj.rate != null)
-                        {
-                            obj.amount = obj.amount / 100;
-                            obj.rate = obj.rate / 100;
-                        }
+                        if (obj.amount == null || obj.rate == null) continue;
+                        obj.amount = obj.amount / 100;
+                        obj.rate = obj.rate / 100;
                     }
 
-                    using (var writer = new StreamWriter(FilePath))
+                    using (var writer = new StreamWriter(filePath))
                     using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
                     {
                         csv.Context.RegisterClassMap<FooMap>();
@@ -79,10 +88,7 @@ namespace Report.Services
 
                 }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
+            catch (Exception e) { Console.WriteLine(e.Message); }
         }
     }
 }
