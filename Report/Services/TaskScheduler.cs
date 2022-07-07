@@ -7,11 +7,11 @@ namespace Report.Services
     public class TaskScheduler
     {
         private static TaskScheduler _instance;
-        public List<Timer> timers = new List<Timer>();
+        private List<Timer> timers = new List<Timer>();
 
         private TaskScheduler() { }
 
-        public static TaskScheduler Instance => _instance ?? (_instance = new TaskScheduler());
+        public static TaskScheduler Instance => _instance ??= new TaskScheduler();
 
         public void ScheduleTask(int hour, int min, double intervalInHour, Action task)
         {

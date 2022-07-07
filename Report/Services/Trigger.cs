@@ -10,9 +10,9 @@ namespace Report.Services
         private static Trigger _instance;
 
         
-        public static Trigger Instance => _instance is null ? _instance = new Trigger(new GoogleDriveService(), new ClockifyService()) : _instance;
-        
-       public Trigger(IGoogleDriveService googleDriveService, IClockifyService clockifyService)
+        public static Trigger Instance => _instance ??= new Trigger(new GoogleDriveService(), new ClockifyService());
+
+        private Trigger(IGoogleDriveService googleDriveService, IClockifyService clockifyService)
         {
             _googleDriveService = googleDriveService;
             _clockifyService = clockifyService;
